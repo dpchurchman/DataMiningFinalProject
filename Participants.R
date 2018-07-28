@@ -61,34 +61,37 @@ dfVictims <- dfVictims[order(dfVictims$incident_id,dfVictims$part),]
 
 dfSuspects <- dfPart[which(dfPart$type == "Subject-Suspect"),]
 dfSuspects <- dfSuspects[order(dfSuspects$incident_id,dfSuspects$part),]
-<<<<<<< HEAD
+
 dfSuspects <- data.frame(unclass(dfSuspects))
 
 
 library(arules)
 suspectTrans <- as(dfSuspects[,4:ncol(dfSuspects)], "transactions")
 suspectTrans
+
 summary(suspectTrans)
 itemFrequencyPlot(suspectTrans, support=0.01, cex.names=0.6)
 
 unique(dfSuspects[,4])
 suspectRules <- apriori(suspectTrans,
-                        parameter = list(support = 0.01, confidence = 0.6),
-                       # appearance = list(rhs=
-                       #                    c('status=Unharmed, Arrested','status=Unharmed',
-                      #                        'status=Injured','status=Killed',
-                      #                        'status=Injured, Arrested','status=Killed, Unharmed',
-                       #                       'status=Arrested','status=Killed, Arrested',
-                        #                      'status=Injured, Unharmed',
-                         #                     'status=Injured, Unharmed, Arrested',
-                          #                    'status=Killed, Injured',
-                           #                   'status=Killed, Unharmed, Arrested'))
+                        parameter = list(support = 0.01, confidence = 0.01),
+                        appearance = list(rhs=
+                                           c('status=Unharmed, Arrested','status=Unharmed',
+                                              'status=Injured','status=Killed',
+                                              'status=Injured, Arrested','status=Killed, Unharmed',
+                                              'status=Arrested','status=Killed, Arrested',
+                                              'status=Injured, Unharmed',
+                                              'status=Injured, Unharmed, Arrested',
+                                              'status=Killed, Injured',
+                                              'status=Killed, Unharmed, Arrested'))
                                           )
 
 summary(suspectRules)
 
-inspect(head(suspectRules,n=5, by="confidence"))
-=======
+inspect(head(suspectRules, n=28,by="confidence"))
 
+plot(head(suspectRules,n=10, by="lift"), method="graph")#,,engine="htmlwidget",
+     #igraphLayout = "layout_in_circle")
 
->>>>>>> 9a67bfb68759adc7229824bb2e2cbbfb52b08fea
+plot(suspectRules, method = "paracoord", control = list(reorder = TRUE))
+
