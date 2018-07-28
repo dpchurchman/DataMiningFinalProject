@@ -77,7 +77,7 @@ suspectRules <- apriori(suspectTrans,
                         parameter = list(support = 0.01, confidence = 0.01),
                         appearance = list(rhs=
                                            c('status=Unharmed, Arrested','status=Unharmed',
-                                              'status=Injured','status=Killed',
+                                              'status=Injured','status=Killed', 'n_guns_involved',
                                               'status=Injured, Arrested','status=Killed, Unharmed',
                                               'status=Arrested','status=Killed, Arrested',
                                               'status=Injured, Unharmed',
