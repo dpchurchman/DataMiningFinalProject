@@ -61,6 +61,7 @@ dfVictims <- dfVictims[order(dfVictims$incident_id,dfVictims$part),]
 
 dfSuspects <- dfPart[which(dfPart$type == "Subject-Suspect"),]
 dfSuspects <- dfSuspects[order(dfSuspects$incident_id,dfSuspects$part),]
+<<<<<<< HEAD
 dfSuspects <- data.frame(unclass(dfSuspects))
 
 
@@ -87,3 +88,7 @@ suspectRules <- apriori(suspectTrans,
 summary(suspectRules)
 
 inspect(head(suspectRules,n=5, by="confidence"))
+=======
+
+
+>>>>>>> 9a67bfb68759adc7229824bb2e2cbbfb52b08fea
