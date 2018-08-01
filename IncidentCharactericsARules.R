@@ -18,7 +18,7 @@ summary(transInc)
 
 library(arulesViz)
 # Plot to see most frequent items
-itemFrequencyPlot(transInc, support=0.01, cex.names=.5)
+itemFrequencyPlot(transInc, support=0.01, cex.names=.6)
 
 rulesInc <- apriori(transInc, parameter = list(support=0.01, confidence=.1))
 

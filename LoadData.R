@@ -19,5 +19,7 @@ load <- read.csv("gunViolence.csv", header=TRUE)
 # dim(df)[1]
 # #summary(df)
 library(rmarkdown)
-
+library(arules)
+library(tidyr)
+library(arulesViz)
 render('Lab3Markdown.Rmd')

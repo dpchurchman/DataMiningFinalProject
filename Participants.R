@@ -77,7 +77,7 @@ suspectRules <- apriori(suspectTrans,
                         parameter = list(support = 0.01, confidence = 0.01),
                         appearance = list(rhs=
                                            c('status=Unharmed, Arrested','status=Unharmed',
-                                              'status=Injured','status=Killed', 'n_guns_involved',
+                                              'status=Injured','status=Killed', #'n_guns_involved',
                                               'status=Injured, Arrested','status=Killed, Unharmed',
                                               'status=Arrested','status=Killed, Arrested',
                                               'status=Injured, Unharmed',
@@ -89,7 +89,7 @@ suspectRules <- apriori(suspectTrans,
 summary(suspectRules)
 
 inspect(head(suspectRules, n=28,by="confidence"))
-
+library(arulesViz)
 plot(head(suspectRules,n=10, by="lift"), method="graph")#,,engine="htmlwidget",
      #igraphLayout = "layout_in_circle")
 

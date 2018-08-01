@@ -13,6 +13,10 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(rmarkdown)
+library(arules)
+library(tidyr)
+library(arulesViz)
 ```
 
 # Business Understanding
@@ -67,13 +71,49 @@ The summary table above shows high frequency examples from each of these remaini
 # Data understanding 2
 <!-- [10 points]  Visualize the any important attributes appropriately. Important: Provide an interpretation for any charts or graphs.-->
 
-Blah blah blah
+One key feature of the data is "incident_characteristics", which contains categorical descriptors. Because of the large number of unique descriptors, we did not include this variable in previous labs, but using the tools of creating association rules gives several ways to help give better insight into this variable, which is really a short summary of each incident. First, we can transform the incidents into transactional data format and look at a brief summary: 
 
-```{r graphwithoutshowingcode, echo=FALSE}
-plot(pressure)
+```{r IncidentRules}
+# Create dfInc for initial Association Rules analysis on just "Incident Characterics"
+dfInc <-  df[c('incident_id','incident_characteristics')]
+
+# Reshape dfInc into long format using tidyr in order to get it into transaction format for arules
+
+dfIncLong <- dfInc %>%  # Since the separator || is an operator, need \\ as escape
+  separate_rows(incident_characteristics, sep="\\|\\|") 
+
+# Change into transaction data for arules
+
+transInc <- as(split(dfIncLong[,'incident_characteristics'],dfIncLong[,'incident_id']),
+               "transactions")
+#inspect(head(transInc))
+summary(transInc)
+```
+
+We can see the most frequent items are ones that describe that people were shot, and whether they were wounded, unharmed or killled. Also high are armed robberies and officer-involved incidents. Most incidents have one or two descriptors, but there are incidents with as many eight descriptors. We can see these, as well as many of the less frequent descriptors in the following item frequency plot, which shows the large number of situations described like car-jackings or gang-involvement.
+
+
+```{r incidentFrequencyPlot, echo=FALSE}
+# Plot to see most frequent items
+itemFrequencyPlot(transInc, support=0.01, cex.names=.5)
+```
+
+There are 504 total descriptors, so what might give better insight into this dataset is which tend to appear together in incidents, which may also reveal redundant descriptors.
+
+```{r Top10Rules}
+rulesInc <- apriori(transInc, parameter = list(support=0.01, confidence=.1))
+inspect(head(rulesInc, n=10), by="confidence")
+```
+
+
+
+```{r RuleGraph, echo=FALSE}
+plot(head(rulesInc,n=30, by="lift"), method="graph")
 ```
 
 # Modeling and Evaluation 1
+
+
 <!-- [10 points] 	Train and adjust parameters -->
 
 # Modeling and Evaluation 2
