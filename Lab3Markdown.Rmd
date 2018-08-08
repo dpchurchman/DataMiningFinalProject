@@ -71,7 +71,7 @@ The summary table above shows high frequency examples from each of these remaini
 # Data understanding 2
 <!-- [10 points]  Visualize the any important attributes appropriately. Important: Provide an interpretation for any charts or graphs.-->
 
-One key feature of the data is "incident_characteristics", which contains categorical descriptors. Because of the large number of unique descriptors, we did not include this variable in previous labs, but using the tools of creating association rules gives several ways to help give better insight into this variable, which is really a short summary of each incident. First, we can transform the incidents into transactional data format and look at a brief summary: 
+One key feature of the data is "incident_characteristics", which contains categorical descriptors. Because of the large number of unique descriptors, we did not include this variable in previous labs, but using the tools of creating association rules gives several ways to help give better insight into this variable, which is essentially a short summary of each incident. First, we can transform the incidents into transactional data format and look at a brief summary: 
 
 ```{r IncidentRules}
 # Create dfInc for initial Association Rules analysis on just "Incident Characterics"
@@ -90,7 +90,7 @@ transInc <- as(split(dfIncLong[,'incident_characteristics'],dfIncLong[,'incident
 summary(transInc)
 ```
 
-We can see the most frequent items are ones that describe that people were shot, and whether they were wounded, unharmed or killled. Also high are armed robberies and officer-involved incidents. Most incidents have one or two descriptors, but there are incidents with as many eight descriptors. We can see these, as well as many of the less frequent descriptors in the following item frequency plot, which shows the large number of situations described like car-jackings or gang-involvement.
+We can see the most frequent items are ones that describe that people were shot, and whether they were wounded, unharmed or killled. Also high in frequency are armed robberies and officer-involved incidents. Most incidents have one or two descriptors, but there are incidents with as many eight descriptors. We can see these, as well as many of the less frequent descriptors in the following item frequency plot, which shows the large number of situations described like car-jackings or gang-involvement.
 
 
 ```{r incidentFrequencyPlot, echo=FALSE}
@@ -98,23 +98,30 @@ We can see the most frequent items are ones that describe that people were shot,
 itemFrequencyPlot(transInc, support=0.01, cex.names=.5)
 ```
 
-There are 504 total descriptors, so what might give better insight into this dataset is which tend to appear together in incidents, which may also reveal redundant descriptors.
+There are 504 total descriptors, so what might give better insight into this dataset is which tend to appear together in incidents, which may also reveal redundant descriptors. To get a broad array of rules, we will set the minimum support and confidence relatively low at 0.01 and 0.1 respectively.
 
-```{r Top10Rules}
+```{r incidentrules}
 rulesInc <- apriori(transInc, parameter = list(support=0.01, confidence=.1))
+```
+
+We can see 92 rules were created comparing the descriptors in incidents. Of note is the relative speed of creating these association rules. Over 180,000 incidents with 504 different descriptors were compared in less than a second on a commercially available laptop. Next, we will look at the top ten rules by confidence.
+
+```{r 10tenincidentrules}
 inspect(head(rulesInc, n=10), by="confidence")
 ```
 
-
+The top three are not surprising, as they were the single descriptors with the highest frequency by far in the frequency plot above. Rules 4-6 all have to do with home-invasion. It seems that when most incidents are labeled as a "home invasion" in the dataset, there is an additional classifier describing the type of home invasion. The next two rules show something similar with Murder/Suicides, and the last two about Officer involved shootings. To visualize these groupings of rules around descriptors that tend to appear together for incidents, we will create a graph plot on all 92 rules. 
 
 ```{r RuleGraph, echo=FALSE}
 plot(head(rulesInc,n=30, by="lift"), method="graph")
 ```
 
+In addition to the home invasion, murder suicide and officer involved shooting groups we saw in the top 10 rules, we can see descriptors around accidental shootings and defensive shootings as well. These five main clusters all most likely have very different attributes, and in future regression and classification, they could be disaggregated and explored individually. 
+
 # Modeling and Evaluation 1
-
-
 <!-- [10 points] 	Train and adjust parameters -->
+
+
 
 # Modeling and Evaluation 2
 <!-- [10 points] Evaluate and Compare -->
