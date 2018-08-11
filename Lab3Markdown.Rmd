@@ -259,6 +259,7 @@ plot(suspectRules, method = "paracoord", control = list(reorder = TRUE))
 
 Not surprisingly, based on the relative frequency plot above, the most rules point towards "unharmed, arrested" and "unharmed" statuses. The rules involving the suspect being killed appear to mostly be associated with "male" and "adult." There is a significant elbow at the adult age group, also not surprising based on relative frequency. Many of the rules involve male" as part of the assocation as well. The "significant other" and "family" relationships are most common, though "armed robbery" is also included. This indicates that most shootings involve someone the suspect knows. 
 
+<<<<<<< HEAD
 Using a graph plot for these relationships reveals similar information as the parallel coordinates plot. The most central nodes are "adult", "male", and "unharmed, arrested." One interesting part of the graph is that "female" appears to only be connected to the "significant other" relationship, although we already saw in the relative frequency plot that females were a small minority of overall suspects.
 
 ```{r matrixGraph, echo=FALSE}
@@ -327,6 +328,29 @@ These rules are drastically different than those we saw for suspects. The victim
 By creating association rules on the characteristics of suspects in over 100,000 shootings in the Gun Violence Archive, we were able find some interesting associations amongst the variables available in the archive to describe the suspects and victims. Without association rule mining, this task would have been fairly arduous, as each shooting involved a variable number of suspects and victims, and the variables used to describe them were sparse. The association rules generated were interprettable and gave new insights into an area of the Gun Violence Archive that was opaque to us in previous labs. In addition to this, the computations involved were very efficient, executing in well under a second on a commercially available laptop. Before learning association rule mining, it would have been very difficult to do pairwise comparisons on the dozens of variables associated with participants in the shootings to see which had significant relationships. 
 
 In our association rules, we saw that most shootings resulted in the suspect being unharmed or unharmed and arrested, as these variables were associated with both genders, adults and teenagers, and various relationships between the suspect and victims. We also saw that for all outcomes, suspects were most likely to be male and adult. On the other hand, in the victim rules, we saw that females and teenagers were more represented, though males and adults were still the most likely victims. We also saw that victims were much more likely to be killed or injured in shooting incidents than suspects. 
+=======
+Using a graph plot for these relationships reveals similar information as the parallel coordinates plot. The most central nodes are "adult", "male", and "unharmed, arrested." One interesting part of the graph is that "female" appears to only be connected to the "significant other" relationship.
+
+```{r graph, echo=FALSE}
+plot(head(suspectRules,n=36, by="lift"), method="graph")
+```
+
+# Modeling and Evaluation 4
+<!-- [20 points] Summarize the ramifications -->
+
+Using the arules packages, we were able to develop 28 association rules for suspects in shooting incidents, which we graphed above. This is not too large a number to look at the rule set in their entirety:
+
+```{r insectrhsrules}
+inspect(head(suspectRules, n=28,by="confidence"))
+```
+
+The 1st, 4th, and 11th highest rules in terms of confidence involved armed robbery. Of these three rules, two associated armed robbery with the adult age group. All three resulted in the suspect being unharmed, though one also included "arrested". In conjunction, this tells us that armed robbery is predominately committed by adults, and is relatively low risk for the suspect.
+
+The 2nd, 3rd, 5th, 6th, 8th, 10th, 12th, and 14th rules according to confidence all involved the suspect being unharmed and arrested. These mostly included family or significant other relationships and adult age groups, though notably the 2nd highest rule associates teenagers. These rules in conjunction indicate that suspects of shootings in this database largely go unharmed, though are also arrested. The large number of these rules that include victims the suspect knows also indicates that most shootings involve someone the suspect knows, which in turn could also explain why the suspect is usually arrested.  
+
+# Modeling and Evaluation 2
+<!-- [10 points] Evaluate and Compare -->
+>>>>>>> f7e22d50ac4a0febcb3f12f5b89125e0ba42ed9d
 
 # Deployment 
 <!-- [10 points] Be critical of your performance and tell the reader how you current model might be usable by other parties. Did you achieve your goals? If not, can you reign in the utility of your modeling? How useful is your model for interested parties (i.e., the companies or organizations that might want to use it)? How would your deploy your model for interested parties? What other data should be collected? How often would the model need to be updated, etc.? -->
