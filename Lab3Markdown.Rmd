@@ -121,16 +121,165 @@ In addition to the home invasion, murder suicide and officer involved shooting g
 # Modeling and Evaluation 1
 <!-- [10 points] 	Train and adjust parameters -->
 
+Besides incideent characteristics, there were also a handful of key-value pairs around the participants in each incident that we only were able to make limited use of in the past labs. Before, we totaled the number of participants in each incident of particular genders and age groups, but did not examine the relationships between participants nor did we disaggregate analysis by type of participant: victim or suspect. The table below gives a sense of the difficulty of analyzing the participant variables: they are unsorted, have variable length, and some, like the relationship to the suspect, are sparse.
+
+```{r participantHead}
+head(df[c('incident_id','participant_age_group','participant_gender','participant_status',
+          'participant_type','participant_relationship')],5)
+
+```
+
+In this section, we will attempt to develop association rules that can give better insight into the participants of gun violence incidents in the Gun Violence Archive. First, we must prepare the data to be more transactional. In this case, each transaction will be a single participant in a single incident. The following code splits the key-value pairs into a long data format and merges all the data on the participant number and incident ID.
+
+```{r participantstotransactions}
+
+library(tidyr)
+### Reformat Participant Information for ARules Investigation###
+
+#Age Group
+dfPartAgeGroup <-  df[c('incident_id','participant_age_group')]
+
+dfLongTemp <- dfPartAgeGroup %>% separate_rows(2, sep="\\|\\|")
+dfLongTemp <- dfLongTemp[which(dfLongTemp[,2] != ''),]
+
+dfPartAgeGroup <- suppressWarnings(separate(dfLongTemp,participant_age_group, into=c(
+                    "part","age_group"), sep = "::", remove = TRUE, convert = TRUE))
+
+#Gender
+dfPartGender <-  df[c('incident_id','participant_gender')]
+
+dfLongTemp <- dfPartGender %>% separate_rows(2, sep="\\|\\|")
+dfLongTemp <- dfLongTemp[which(dfLongTemp[,2] != ''),]
+
+dfPartGender <- suppressWarnings(separate(dfLongTemp,participant_gender, into=c("part","gender"), 
+                           sep = "::", remove = TRUE, convert = TRUE))
+
+#Relationship
+dfPartRelationship <-  df[c('incident_id','participant_relationship')]
+
+dfLongTemp <- dfPartRelationship %>% separate_rows(2, sep="\\|\\|")
+dfLongTemp <- dfLongTemp[which(dfLongTemp[,2] != ''),]
+
+dfPartRelationship <- suppressWarnings(separate(dfLongTemp,participant_relationship, into=c("part","relationship"), 
+                         sep = "::", remove = TRUE, convert = TRUE))
+
+#Status: Killed, Injured, Arrested, Unharmed
+dfPartStatus <-  df[c('incident_id','participant_status')]
+
+dfLongTemp <- dfPartStatus %>% separate_rows(2, sep="\\|\\|")
+dfLongTemp <- dfLongTemp[which(dfLongTemp[,2] != ''),]
+
+dfPartStatus <- suppressWarnings(separate(dfLongTemp,participant_status, into=c("part","status"), 
+                               sep = "::", remove = TRUE, convert = TRUE))
+
+#Type: Suspect or Victim
+dfPartType <-  df[c('incident_id','participant_type')]
+
+dfLongTemp <- dfPartType %>% separate_rows(2, sep="\\|\\|")
+dfLongTemp <- dfLongTemp[which(dfLongTemp[,2] != ''),]
+
+dfPartType <- suppressWarnings(separate(dfLongTemp,participant_type, into=c("part","type"), 
+                         sep = "::", remove = TRUE, convert = TRUE))
+
+#Merge all the participant variables
+dfPart <- merge(dfPartType, dfPartStatus, by=c("incident_id","part"), all=TRUE)
+dfPart <- merge(dfPart, dfPartAgeGroup, by=c("incident_id","part"), all=TRUE)
+dfPart <- merge(dfPart, dfPartGender, by=c("incident_id","part"), all=TRUE)
+dfPart <- merge(dfPart, dfPartRelationship, by=c("incident_id","part"), all=TRUE)
+head(dfPart)
+```
+
+This dataframe contains both suspects and victims. Both may yield interesting analyses, but for our analysis, we will focus on the suspects involved in gun violence incidents.
+
+```{r getsuspects}
+dfSuspects <- dfPart[which(dfPart$type == "Subject-Suspect"),]
+dfSuspects <- dfSuspects[order(dfSuspects$incident_id,dfSuspects$part),]
+dfSuspects <- data.frame(unclass(dfSuspects))
+```
+
+We will be using the "arules" package in R to derive our association rules, which requires the data be in "transactional" form.
+
+```{r supectTrans}
+library(arules)
+suspectTrans <- as(dfSuspects[,4:ncol(dfSuspects)], "transactions")
+summary(suspectTrans)
+```
+
+Our rules will be based on 126,660 suspects of gun violence, based on 30 different variables. These 30 variables are the result of splitting the age, gender, relationship, and status variable into binary variables. We can see the most frequent items are the adult and teen age groups, as well as three of the potential statuses of the suspect: unharmed, unharmed and arrested, killed. Below, we visualize those items with the highest relative frequency, and it becomes apparent that the there are four characteristics far above the others: "male","unharmed", "unharmed and arrested", and "adult." This tells us that most gun violence incidents do not result in the suspect being harmed, though many do involve th suspect being arrested. It also tells us that most gun violence incidents involve suspects that are adults as opposed to teenagers or children.
 
 
-# Modeling and Evaluation 2
-<!-- [10 points] Evaluate and Compare -->
+```{r suspectItemFreq, echo=FALSE}
+itemFrequencyPlot(suspectTrans, support=0.005, cex.names=0.6)
+```
+
+Next, we will see if there are any associations that bring more insights into the suspects of shoting besides those seen in their relative frequencies.
+
+```{r suspectrules}
+suspectRules <- apriori(suspectTrans,
+                        parameter = list(support = 0.01, confidence = 0.01))
+
+summary(suspectRules)
+```
+
+There were enough associations between variables to create 136 rules for analysis. Also of note is the very fast performance of creating these rules; well under one second total. Most of these rules, involved associatinng 2 or 3 variables, though there some with 1 and 4 variables included.
+
+```{r inspectRules}
+inspect(head(suspectRules, n=10,by="confidence"))
+```
+
+Looking at the rules, we see the assignment to left and right hand sides is arbitrary, which muddies potential analysis. The most interesting attribute about the suspect is their status after the shooting, so to better tune the rules for analysis of suspect status, we will make the status the right hand side of the association rules.
+
+```{r rhsRules}
+suspectRules <- apriori(suspectTrans,
+                        parameter = list(support = 0.01, confidence = 0.01),
+                        appearance = list(rhs=
+                                           c('status=Unharmed, Arrested','status=Unharmed',
+                                              'status=Injured','status=Killed', 
+                                              'status=Injured, Arrested','status=Killed, Unharmed',
+                                              'status=Arrested','status=Killed, Arrested',
+                                              'status=Injured, Unharmed',
+                                              'status=Injured, Unharmed, Arrested',
+                                              'status=Killed, Injured',
+                                              'status=Killed, Unharmed, Arrested'))
+                                          )
+
+summary(suspectRules)
+```
+
+Limiting the rhs to status has the added benefit of eliminating some of the redundant rules, streamlining the analysis. Now, there are 44 rules, just under a third what we had before, with roughly the same distribution of rules containing 1, 2, 3 and 4 associated variables. In traditional market-basket analysis, association rules can number in the hundreds or thousands, so 44 rules is relatively few, and not so many that we cannot simply read and interpret each rule, which we will do in a later section. First, we visualize these rules in order to develop some intuition around their meaning.
 
 # Modeling and Evaluation 3
 <!-- [10 points] Visualize Results -->
 
+First, we will look at a parallel coordinate plot, ordered to minimize crossings.
+
+```{r paracoord, echo=FALSE}
+plot(suspectRules, method = "paracoord", control = list(reorder = TRUE))
+```
+
+Not surprisingly, based on the relative frequency plot above, the most rules point towards "unharmed, arrested" and "unharmed" statuses. The rules involving the suspect being killed appear to mostly be associated with "male" and "adult." There is a significant elbow at the adult age group, also not surprising based on relative frequency. Many of the rules involve male" as part of the assocation as well. The "significant other" and "family" relationships are most common, though "armed robbery" is also included. This indicates that most shootings involve someone the suspect knows. 
+
+Using a graph plot for these relationships reveals similar information as the parallel coordinates plot. The most central nodes are "adult", "male", and "unharmed, arrested." One interesting part of the graph is that "female" appears to only be connected to the "significant other" relationship.
+
+```{r graph, echo=FALSE}
+plot(head(suspectRules,n=36, by="lift"), method="graph")
+```
+
 # Modeling and Evaluation 4
 <!-- [20 points] Summarize the ramifications -->
+
+Using the arules packages, we were able to develop 28 association rules for suspects in shooting incidents, which we graphed above. This is not too large a number to look at the rule set in their entirety:
+
+```{r insectrhsrules}
+inspect(head(suspectRules, n=28,by="confidence"))
+```
+
+The 1st, 4th, and 11th highest rules in terms of confidence involved armed robbery. Of these three rules, two associated armed robbery with the adult age group. All three resulted in the suspect being unharmed, though one also included "arrested". In conjunction, this tells us that armed robbery is predominately committed by adults, and is relatively low risk for the suspect.
+
+The 2nd, 3rd, 5th, 6th, 8th, 10th, 12th, and 14th rules according to confidence all involved the suspect being unharmed and arrested. These mostly included family or significant other relationships and adult age groups, though notably the 2nd highest rule associates teenagers. These rules in conjunction indicate that suspects of shootings in this database largely go unharmed, though are also arrested. The large number of these rules that include victims the suspect knows also indicates that most shootings involve someone the suspect knows, which in turn could also explain why the suspect is usually arrested.  
+
+# Modeling and Evaluation 2
+<!-- [10 points] Evaluate and Compare -->
 
 # Deployment 
 <!-- [10 points] Be critical of your performance and tell the reader how you current model might be usable by other parties. Did you achieve your goals? If not, can you reign in the utility of your modeling? How useful is your model for interested parties (i.e., the companies or organizations that might want to use it)? How would your deploy your model for interested parties? What other data should be collected? How often would the model need to be updated, etc.? -->
