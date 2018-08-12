@@ -6,9 +6,6 @@ output:
   html_document:
     theme: journal
     highlight: pygments
-    number_sections: true
-    toc: true
-    toc_float: true
 ---
 
 ```{r setup, include=FALSE}
@@ -17,37 +14,39 @@ library(rmarkdown)
 library(arules)
 library(tidyr)
 library(arulesViz)
+library(htmltools)
 ```
 
-# Business Understanding
+# Business Understanding  
 <!--[10 points] Describe the purpose of the data set you selected (i.e., why was this data collected in the first place?). How will you measure the effectiveness of a good algorithm? Why does your chosen validation method make sense for this specific dataset and the stakeholders needs?-->
 
-With frequent news of school shootings and police-related violence, there is widespread interest in studying data associated with gun violence incidents. A data set recording all U.S. gun violence events between January 2013 and March 2018, is available for study on [kaggle.com](https://www.kaggle.com/jameslko/gun-violence-data). This data was mined from the Gun Violence Archive using a Python script by James Ko and posted publicly on Kaggle for open investigation. The Gun Violence Archive collects its data by utilizing, "automated queries, manual research through over 2,000 media sources, aggregates, police blotters, police media outlets and other sources daily. Each incident is verified by both initial researchers and secondary validation processes." 
-
-This dataset contains a record of more than 230,000 U.S. gun-related incidents, providing detailed information about the event location both geographic and descriptive, number of participants, number killed or injured, etc. and data related to the shooters and victims (such as age, relationships, count, gender). The dataset also includes a link to the news source from which the data record was obtained. The dataset was created to help close an information-availability gap and make data related to gun violence readily available for analysis, providing opportunity for identifying correlations, developing predictive trend models, and influencing decision-making. 
-
-In the previous two labs, we did exploratory analysis of the data and created algorithms aimed at predicting the level of fatality of a given shooting incident based on the dataset. We used a variety of classification and regression techniques, but in the end, our predictions were only a small amount greater than chance. Though this data set is extensive, it is still limited in quality, and may not provide enough information or reliable enough information to be highly predictive. 
-
-In this lab, rather than attempting predictions, we will look for associations in the dataset, and attempt to create and interpret rules of association which can explain broad trends in gun violence incidents from the last five years. These rules of association could potentially help law enforcement, journalists and researchers better understand patterns found in shooting incidents. 
+With frequent news of school shootings and police-related violence, there is widespread interest in studying data associated with gun violence incidents. A data set recording all U.S. gun violence events between January 2013 and March 2018, is available for study on [kaggle.com](https://www.kaggle.com/jameslko/gun-violence-data). This data was mined from the Gun Violence Archive using a Python script by James Ko and posted publicly on Kaggle for open investigation. The Gun Violence Archive collects its data by utilizing, "automated queries, manual research through over 2,000 media sources, aggregates, police blotters, police media outlets and other sources daily. Each incident is verified by both initial researchers and secondary validation processes."  
+\
+This dataset contains a record of more than 230,000 U.S. gun-related incidents, providing detailed information about the event location both geographic and descriptive, number of participants, number killed or injured, etc. and data related to the shooters and victims (such as age, relationships, count, gender). The dataset also includes a link to the news source from which the data record was obtained. The dataset was created to help close an information-availability gap and make data related to gun violence readily available for analysis, providing opportunity for identifying correlations, developing predictive trend models, and influencing decision-making.  
+\
+In the previous two labs, we did exploratory analysis of the data and created algorithms aimed at predicting the level of fatality of a given shooting incident based on the dataset. We used a variety of classification and regression techniques, but in the end, our predictions were only a small amount greater than chance. Though this data set is extensive, it is still limited in quality, and may not provide enough information or reliable enough information to be highly predictive.  
+\
+In this lab, rather than attempting predictions, we will look for associations in the dataset, and attempt to create and interpret rules of association which can explain broad trends in gun violence incidents from the last five years. These rules of association could potentially help law enforcement, journalists and researchers better understand patterns found in shooting incidents.  
 
 # Data understanding 1
 <!--[10 points] Describe the meaning and type of data (scale, values, etc.) for each attribute in the data file. Verify data quality: Are there missing values? Duplicate data? Outliers? Are those mistakes? How do you deal with these problems?-->
 
-To begin, we downloaded the data as a csv and loaded it into a dataframe. The data includes 29 variables. We focused extensively on the number killed and injured in our predictive models, but will drop these variables for this analysis in order to focus on other categorical measures. Similary, nine variables of have to do with the location of the incident. We did find in previous labs that the state the shooting occurred appeared to have some predictive power, but for the sake of speed and reducing dimensionality, we will drop all location variables. We also saw seasonal and day-of-the-week effects, but in this case, we will drop the date variables. Additionally, we will drop the three variables having to do with links to sources for more information about the shooting, as well as the variable "notes," which are unstructured qualitative descriptions of each incident and the participants names. There is both 'participant_age' and 'age_group', so we will drop the continuous 'age' to use 'age_group'. 
+To begin, we downloaded the data as a csv and loaded it into a dataframe. The data includes 29 variables. We focused extensively on the number killed and injured in our predictive models, but will drop these variables for this analysis in order to focus on other categorical measures. Similary, nine variables of have to do with the location of the incident. We did find in previous labs that the state the shooting occurred appeared to have some predictive power, but for the sake of speed and reducing dimensionality, we will drop all location variables. We also saw seasonal and day-of-the-week effects, but in this case, we will drop the date variables. Additionally, we will drop the three variables having to do with links to sources for more information about the shooting, as well as the variable "notes," which are unstructured qualitative descriptions of each incident and the participants names. There is both 'participant_age' and 'age_group', so we will drop the continuous 'age' to use 'age_group'.  
+\
+In addition to shooting incidents, the dataset includes a number of gun-seizures from crime scenes and airports that involved large numbers of guns but no victims or shootings, so these incidents were removed from the dataset.  
+\
+This leaves 9 variables for analysis:  
 
-In addition to shooting incidents, the dataset includes a number of gun-seizures from crime scenes and airports that involved large numbers of guns but no victims or shootings, so these incidents were removed from the dataset.
-
-This leaves 9 variables for analysis: 
-* incident_id: a unique identifier for each incident.
-* gun_stolen: Key-value pairs of whether each gun in the incident was stolen
-* gun_type: Key-value pairs, using the same key as 'gun_stolen' describing the type of gun used
-* incident_characteristics: a category describing the incident, i.e. "Drive-by", "Armed robbery", etc.
-* participants: five variables contain key-value pairs describing the different participants in the incident: 
-  + age_group
-  + gender
-  + relationship, i.e. "family", "significant other", etc.
-  + status, i.e. "killed", "unharmed", "arrested", etc.
-  + type: "victim" or "suspect"
+* incident_id: a unique identifier for each incident.  
+* gun_stolen: Key-value pairs of whether each gun in the incident was stolen  
+* gun_type: Key-value pairs, using the same key as 'gun_stolen' describing the type of gun used  
+* incident_characteristics: a category describing the incident, i.e. "Drive-by", "Armed robbery", etc.  
+* participants: five variables contain key-value pairs describing the different participants in the incident:  
+    + age_group  
+    + gender  
+    + relationship, i.e. "family", "significant other", etc.  
+    + status, i.e. "killed", "unharmed", "arrested", etc.  
+    + type: "victim" or "suspect"  
 
 ```{r loadcsv,results='asis'}
 #load <- read.csv("gunViolence.csv", header=TRUE)
@@ -59,19 +58,19 @@ df <- subset(load, select=-c(incident_url,notes,location_description,participant
 
 df <- df[!grepl("Non-Shooting Incident", df$incident_characteristics),]
 df <- df[!grepl("Gun buy back action", df$incident_characteristics),]
-df <- df[!grepl("Possession \\(gun\\(s\\) found during commission of other crimes\\)", 
+df <- df[!grepl("Possession \\(gun\\(s\\) found during commission of other crimes\\)",
                 df$incident_characteristics),]
 
 library(knitr)
 kable(summary(df[,2:ncol(df)]))
 ```
 
-The summary table above shows high frequency examples from each of these remaining variables. There are `r dim(df)[1]` total incidents left after cleaning. Of the variables left for analysis, the most complete is "incident_characteristics." The key-value pairs describing guns and the participants are all missing tens of thousands of values, which made them problematic when we were creating prediction models, however association rules are designed around very sparse datasets like market-basket analysis, so it should be robust to these missing values. The structure of the key-value pairs will require further formatting before analysis can be completed. 
+The summary table above shows high frequency examples from each of these remaining variables. There are `r dim(df)[1]` total incidents left after cleaning. Of the variables left for analysis, the most complete is "incident_characteristics." The key-value pairs describing guns and the participants are all missing tens of thousands of values, which made them problematic when we were creating prediction models, however association rules are designed around very sparse datasets like market-basket analysis, so it should be robust to these missing values. The structure of the key-value pairs will require further formatting before analysis can be completed.
 
 # Data understanding 2
 <!-- [10 points]  Visualize the any important attributes appropriately. Important: Provide an interpretation for any charts or graphs.-->
 
-One key feature of the data is "incident_characteristics", which contains categorical descriptors. Because of the large number of unique descriptors, we did not include this variable in previous labs, but using the tools of creating association rules gives several ways to help give better insight into this variable, which is essentially a short summary of each incident. First, we can transform the incidents into transactional data format and look at a brief summary: 
+One key feature of the data is "incident_characteristics", which contains categorical descriptors. Because of the large number of unique descriptors, we did not include this variable in previous labs, but using the tools of creating association rules gives several ways to help give better insight into this variable, which is essentially a short summary of each incident. First, we can transform the incidents into transactional data format and look at a brief summary:
 
 ```{r IncidentRules}
 # Create dfInc for initial Association Rules analysis on just "Incident Characterics"
@@ -80,7 +79,7 @@ dfInc <-  df[c('incident_id','incident_characteristics')]
 # Reshape dfInc into long format using tidyr in order to get it into transaction format for arules
 
 dfIncLong <- dfInc %>%  # Since the separator || is an operator, need \\ as escape
-  separate_rows(incident_characteristics, sep="\\|\\|") 
+  separate_rows(incident_characteristics, sep="\\|\\|")
 
 # Change into transaction data for arules
 
@@ -91,7 +90,6 @@ summary(transInc)
 ```
 
 We can see the most frequent items are ones that describe that people were shot, and whether they were wounded, unharmed or killled. Also high in frequency are armed robberies and officer-involved incidents. Most incidents have one or two descriptors, but there are incidents with as many eight descriptors. We can see these, as well as many of the less frequent descriptors in the following item frequency plot, which shows the large number of situations described like car-jackings or gang-involvement.
-
 
 ```{r incidentFrequencyPlot, echo=FALSE}
 # Plot to see most frequent items
@@ -110,13 +108,13 @@ We can see 92 rules were created comparing the descriptors in incidents. Of note
 inspect(head(rulesInc, n=10), by="confidence")
 ```
 
-The top three are not surprising, as they were the single descriptors with the highest frequency by far in the frequency plot above. Rules 4-6 all have to do with home-invasion. It seems that when most incidents are labeled as a "home invasion" in the dataset, there is an additional classifier describing the type of home invasion. The next two rules show something similar with Murder/Suicides, and the last two about Officer involved shootings. To visualize these groupings of rules around descriptors that tend to appear together for incidents, we will create a graph plot on all 92 rules. 
+The top three are not surprising, as they were the single descriptors with the highest frequency by far in the frequency plot above. Rules 4-6 all have to do with home-invasion. It seems that when most incidents are labeled as a "home invasion" in the dataset, there is an additional classifier describing the type of home invasion. The next two rules show something similar with Murder/Suicides, and the last two about Officer involved shootings. To visualize these groupings of rules around descriptors that tend to appear together for incidents, we will create a graph plot on all 92 rules.
 
 ```{r RuleGraph, echo=FALSE}
 plot(head(rulesInc,n=30, by="lift"), method="graph")
 ```
 
-In addition to the home invasion, murder suicide and officer involved shooting groups we saw in the top 10 rules, we can see descriptors around accidental shootings and defensive shootings as well. These five main clusters all most likely have very different attributes, and in future regression and classification, they could be disaggregated and explored individually. 
+In addition to the home invasion, murder suicide and officer involved shooting groups we saw in the top 10 rules, we can see descriptors around accidental shootings and defensive shootings as well. These five main clusters all most likely have very different attributes, and in future regression and classification, they could be disaggregated and explored individually.
 
 # Modeling and Evaluation 1
 <!-- [10 points] 	Train and adjust parameters -->
@@ -151,7 +149,7 @@ dfPartGender <-  df[c('incident_id','participant_gender')]
 dfLongTemp <- dfPartGender %>% separate_rows(2, sep="\\|\\|")
 dfLongTemp <- dfLongTemp[which(dfLongTemp[,2] != ''),]
 
-dfPartGender <- suppressWarnings(separate(dfLongTemp,participant_gender, into=c("part","gender"), 
+dfPartGender <- suppressWarnings(separate(dfLongTemp,participant_gender, into=c("part","gender"),
                            sep = "::", remove = TRUE, convert = TRUE))
 
 #Relationship
@@ -160,7 +158,7 @@ dfPartRelationship <-  df[c('incident_id','participant_relationship')]
 dfLongTemp <- dfPartRelationship %>% separate_rows(2, sep="\\|\\|")
 dfLongTemp <- dfLongTemp[which(dfLongTemp[,2] != ''),]
 
-dfPartRelationship <- suppressWarnings(separate(dfLongTemp,participant_relationship, into=c("part","relationship"), 
+dfPartRelationship <- suppressWarnings(separate(dfLongTemp,participant_relationship, into=c("part","relationship"),
                          sep = "::", remove = TRUE, convert = TRUE))
 
 #Status: Killed, Injured, Arrested, Unharmed
@@ -169,7 +167,7 @@ dfPartStatus <-  df[c('incident_id','participant_status')]
 dfLongTemp <- dfPartStatus %>% separate_rows(2, sep="\\|\\|")
 dfLongTemp <- dfLongTemp[which(dfLongTemp[,2] != ''),]
 
-dfPartStatus <- suppressWarnings(separate(dfLongTemp,participant_status, into=c("part","status"), 
+dfPartStatus <- suppressWarnings(separate(dfLongTemp,participant_status, into=c("part","status"),
                                sep = "::", remove = TRUE, convert = TRUE))
 
 #Type: Suspect or Victim
@@ -178,7 +176,7 @@ dfPartType <-  df[c('incident_id','participant_type')]
 dfLongTemp <- dfPartType %>% separate_rows(2, sep="\\|\\|")
 dfLongTemp <- dfLongTemp[which(dfLongTemp[,2] != ''),]
 
-dfPartType <- suppressWarnings(separate(dfLongTemp,participant_type, into=c("part","type"), 
+dfPartType <- suppressWarnings(separate(dfLongTemp,participant_type, into=c("part","type"),
                          sep = "::", remove = TRUE, convert = TRUE))
 
 #Merge all the participant variables
@@ -207,7 +205,6 @@ summary(suspectTrans)
 
 Our rules will be based on 126,660 suspects of gun violence, based on 30 different variables. These 30 variables are the result of splitting the age, gender, relationship, and status variable into binary variables. We can see the most frequent items are the adult and teen age groups, as well as three of the potential statuses of the suspect: unharmed, unharmed and arrested, killed. Below, we visualize those items with the highest relative frequency, and it becomes apparent that the there are four characteristics far above the others: "male","unharmed", "unharmed and arrested", and "adult." This tells us that most gun violence incidents do not result in the suspect being harmed, though many do involve th suspect being arrested. It also tells us that most gun violence incidents involve suspects that are adults as opposed to teenagers or children.
 
-
 ```{r suspectItemFreq, echo=FALSE}
 itemFrequencyPlot(suspectTrans, support=0.005, cex.names=0.6)
 ```
@@ -234,7 +231,7 @@ suspectRules <- apriori(suspectTrans,
                         parameter = list(support = 0.01, confidence = 0.01),
                         appearance = list(rhs=
                                            c('status=Unharmed, Arrested','status=Unharmed',
-                                              'status=Injured','status=Killed', 
+                                              'status=Injured','status=Killed',
                                               'status=Injured, Arrested','status=Killed, Unharmed',
                                               'status=Arrested','status=Killed, Arrested',
                                               'status=Injured, Unharmed',
@@ -257,29 +254,28 @@ First, we will look at a parallel coordinate plot, ordered to minimize crossings
 plot(suspectRules, method = "paracoord", control = list(reorder = TRUE))
 ```
 
-Not surprisingly, based on the relative frequency plot above, the most rules point towards "unharmed, arrested" and "unharmed" statuses. The rules involving the suspect being killed appear to mostly be associated with "male" and "adult." There is a significant elbow at the adult age group, also not surprising based on relative frequency. Many of the rules involve male" as part of the assocation as well. The "significant other" and "family" relationships are most common, though "armed robbery" is also included. This indicates that most shootings involve someone the suspect knows. 
+Not surprisingly, based on the relative frequency plot above, the most rules point towards "unharmed, arrested" and "unharmed" statuses. The rules involving the suspect being killed appear to mostly be associated with "male" and "adult." There is a significant elbow at the adult age group, also not surprising based on relative frequency. Many of the rules involve male" as part of the assocation as well. The "significant other" and "family" relationships are most common, though "armed robbery" is also included. This indicates that most shootings involve someone the suspect knows.  
 
-<<<<<<< HEAD
 Using a graph plot for these relationships reveals similar information as the parallel coordinates plot. The most central nodes are "adult", "male", and "unharmed, arrested." One interesting part of the graph is that "female" appears to only be connected to the "significant other" relationship, although we already saw in the relative frequency plot that females were a small minority of overall suspects.
 
 ```{r matrixGraph, echo=FALSE}
 plot(head(suspectRules,n=36, by="lift"), method="graph")
 ```
 
-The graph plot reveals interesting relation, but both it and the parallel coordinates can be difficult to see all relations, so as a final visualization of all the rules, we will plot them as a matrix, with shading weighted by lift, and ordered by support. 
+The graph plot reveals interesting relation, but both it and the parallel coordinates can be difficult to see all relations, so as a final visualization of all the rules, we will plot them as a matrix, with shading weighted by lift, and ordered by support.
 
 ```{r suspectMatrix}
 plot(suspectRules, method="matrix", measure="lift", control=list(reorder='support/confidence'))
 ```
 
-What the matrix makes clear that was harder to see in the other graphs is that only four of the antecedents have corresponding associations with the consequents. Those four are: 
+What the matrix makes clear that was harder to see in the other graphs is that only four of the antecedents have corresponding associations with the consequents. Those four are:  
 
-* No antecedent
-* Male 
-* Adult
-* Adult and male
+* No antecedent  
+* Male  
+* Adult  
+* Adult and male  
 
-All other antecendents, including teenaged, child, female, and relationships only had consequents of "Unharmed" or "Unharmed, arrested."  The consequents that adults, males, and adult males were associated with included these two, but also "killed", "injured," and "injured, arrested." The darker shading indicates that adults and males are more likely to be associated with being  and killed in shooting incidents, whereas teenagers, females, and the various other antecedents are more darkly shaded in the unharmed consequents. It is promising that the darkest band is the "unharmed, arrested," which indicates law enforcement was able to capture the shooting suspect without injuring them in many of the shooting incidents. 
+All other antecendents, including teenaged, child, female, and relationships only had consequents of "Unharmed" or "Unharmed, arrested."  The consequents that adults, males, and adult males were associated with included these two, but also "killed", "injured," and "injured, arrested." The darker shading indicates that adults and males are more likely to be associated with being  and killed in shooting incidents, whereas teenagers, females, and the various other antecedents are more darkly shaded in the unharmed consequents. It is promising that the darkest band is the "unharmed, arrested," which indicates law enforcement was able to capture the shooting suspect without injuring them in many of the shooting incidents.
 
 # Modeling and Evaluation 2
 <!-- [10 points] Evaluate and Compare -->
@@ -298,7 +294,7 @@ victimRules <- apriori(victimTrans,
                         parameter = list(support = 0.01, confidence = 0.01),
                         appearance = list(rhs=
                                             c('status=Unharmed, Arrested','status=Unharmed',
-                                              'status=Injured','status=Killed', 
+                                              'status=Injured','status=Killed',
                                               'status=Injured, Arrested','status=Killed, Unharmed',
                                               'status=Arrested','status=Killed, Arrested',
                                               'status=Injured, Unharmed',
@@ -320,51 +316,30 @@ Using the same parameters we used before for suspects, we see 23 association rul
 inspect(head(victimRules, n=10,by="lift"))
 ```
 
-These rules are drastically different than those we saw for suspects. The victims rules contain both teenagers and females for "unharmed," "injured"" and "killed"" outcomes. Adults and males also appear, though they are much more likely to be injured or killed in the victim rules than in the suspect rules. The consequent of "arrested" is not included for victims, which makes sense, as they are the victims of the shootings and you would not expect them to be arrested.  
+These rules are drastically different than those we saw for suspects. The victims rules contain both teenagers and females for "unharmed," "injured"" and "killed"" outcomes. Adults and males also appear, though they are much more likely to be injured or killed in the victim rules than in the suspect rules. The consequent of "arrested" is not included for victims, which makes sense, as they are the victims of the shootings and you would not expect them to be arrested.
 
 # Modeling and Evaluation 4
 <!-- [20 points] Summarize the ramifications -->
 
-By creating association rules on the characteristics of suspects in over 100,000 shootings in the Gun Violence Archive, we were able find some interesting associations amongst the variables available in the archive to describe the suspects and victims. Without association rule mining, this task would have been fairly arduous, as each shooting involved a variable number of suspects and victims, and the variables used to describe them were sparse. The association rules generated were interprettable and gave new insights into an area of the Gun Violence Archive that was opaque to us in previous labs. In addition to this, the computations involved were very efficient, executing in well under a second on a commercially available laptop. Before learning association rule mining, it would have been very difficult to do pairwise comparisons on the dozens of variables associated with participants in the shootings to see which had significant relationships. 
+By creating association rules on the characteristics of suspects in over 100,000 shootings in the Gun Violence Archive, we were able find some interesting associations amongst the variables available in the archive to describe the suspects and victims. Without association rule mining, this task would have been fairly arduous, as each shooting involved a variable number of suspects and victims, and the variables used to describe them were sparse. The association rules generated were interprettable and gave new insights into an area of the Gun Violence Archive that was opaque to us in previous labs. In addition to this, the computations involved were very efficient, executing in well under a second on a commercially available laptop. Before learning association rule mining, it would have been very difficult to do pairwise comparisons on the dozens of variables associated with participants in the shootings to see which had significant relationships.  
+\
+In our association rules, we saw that most shootings resulted in the suspect being unharmed or unharmed and arrested, as these variables were associated with both genders, adults and teenagers, and various relationships between the suspect and victims. We also saw that for all outcomes, suspects were most likely to be male and adult. On the other hand, in the victim rules, we saw that females and teenagers were more represented, though males and adults were still the most likely victims. We also saw that victims were much more likely to be killed or injured in shooting incidents than suspects.  
 
-In our association rules, we saw that most shootings resulted in the suspect being unharmed or unharmed and arrested, as these variables were associated with both genders, adults and teenagers, and various relationships between the suspect and victims. We also saw that for all outcomes, suspects were most likely to be male and adult. On the other hand, in the victim rules, we saw that females and teenagers were more represented, though males and adults were still the most likely victims. We also saw that victims were much more likely to be killed or injured in shooting incidents than suspects. 
-=======
-Using a graph plot for these relationships reveals similar information as the parallel coordinates plot. The most central nodes are "adult", "male", and "unharmed, arrested." One interesting part of the graph is that "female" appears to only be connected to the "significant other" relationship.
-
-```{r graph, echo=FALSE}
-plot(head(suspectRules,n=36, by="lift"), method="graph")
-```
-
-# Modeling and Evaluation 4
-<!-- [20 points] Summarize the ramifications -->
-
-Using the arules packages, we were able to develop 28 association rules for suspects in shooting incidents, which we graphed above. This is not too large a number to look at the rule set in their entirety:
-
-```{r insectrhsrules}
-inspect(head(suspectRules, n=28,by="confidence"))
-```
-
-The 1st, 4th, and 11th highest rules in terms of confidence involved armed robbery. Of these three rules, two associated armed robbery with the adult age group. All three resulted in the suspect being unharmed, though one also included "arrested". In conjunction, this tells us that armed robbery is predominately committed by adults, and is relatively low risk for the suspect.
-
-The 2nd, 3rd, 5th, 6th, 8th, 10th, 12th, and 14th rules according to confidence all involved the suspect being unharmed and arrested. These mostly included family or significant other relationships and adult age groups, though notably the 2nd highest rule associates teenagers. These rules in conjunction indicate that suspects of shootings in this database largely go unharmed, though are also arrested. The large number of these rules that include victims the suspect knows also indicates that most shootings involve someone the suspect knows, which in turn could also explain why the suspect is usually arrested.  
-
-# Modeling and Evaluation 2
-<!-- [10 points] Evaluate and Compare -->
->>>>>>> f7e22d50ac4a0febcb3f12f5b89125e0ba42ed9d
-
-# Deployment 
+# Deployment
 <!-- [10 points] Be critical of your performance and tell the reader how you current model might be usable by other parties. Did you achieve your goals? If not, can you reign in the utility of your modeling? How useful is your model for interested parties (i.e., the companies or organizations that might want to use it)? How would your deploy your model for interested parties? What other data should be collected? How often would the model need to be updated, etc.? -->
 
-The goal of this lab was to "use transaction data for mining assocation rules." The Gun Violence Archive did not contain transaction data, but we were able to successfully transform variables around incident characteristics and the participants to create transaction-like data for association rule mining. We were able successfully mine interpretable rules for the incident characteristics, victims, and suspects involved in the shooting. Computationally, this was very quick to do. 
-
+The goal of this lab was to "use transaction data for mining assocation rules." The Gun Violence Archive did not contain transaction data, but we were able to successfully transform variables around incident characteristics and the participants to create transaction-like data for association rule mining. We were able successfully mine interpretable rules for the incident characteristics, victims, and suspects involved in the shooting. Computationally, this was very quick to do.  
+\
 For these specific results, interested parties would be any people interested in better understanding gun violence in the United States, including law enforcement, legislators and activitists. More broadly, the method of transforming sparse and unbalanced data into transactional data for association rule mining could be of interest to anyone beginning a data analysis on a similar data set. Because of its relative speed and the fast interpretation of its results, it would be especially useful at the EDA stage of data analysis, when a large variety of vizualizations are desired to build intuition around the relationships in a large dataset. Previously, large numbers of correlation plots might be constructed, which only works for numerical data, but association rules creates a path for finding relationships amongst a variety of categorical variables.
 
 # Exceptional Work
 <!-- [10 points] You have free reign to provide additional analyses or combine analyses. -->
 
+Another variable in our dataset that was previously difficult to make use of was a location description. In the following section, we use natural language processing techniques in Python to derive insights from the location description of different gun violence incidents:
 
-
-
+```{r, echo=FALSE}
+htmltools::includeHTML("location_analysis.html")
+```
 
 
 
